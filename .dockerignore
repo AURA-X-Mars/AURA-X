@@ -1,0 +1,15 @@
+.git
+.env
+.venv
+venv
+.vscode
+.idea
+__pycache__
+**/__pycache__
+**/*.pyc
+web/node_modules
+web/dist
+data/raw
+data/processed
+data/cache
+src/ai/models/*.pt

@@ -1,0 +1,59 @@
+services:
+  aura-backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai
+    container_name: aura_backend_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://aura-redis:6379/0
+    volumes:
+      - ./data:/app/data
+      - ./src/ai/models:/app/src/ai/models
+    depends_on:
+      aura-redis:
+        condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - ai_engine
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  aura-web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+      args:
+        VITE_API_URL: http://localhost:8000
+        VITE_WS_URL: ws://localhost:8000
+    container_name: aura_web_console
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      aura-backend:
+        condition: service_healthy
+
+  aura-redis:
+    image: redis:7-alpine
+    container_name: aura_redis_cache
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis_data:
